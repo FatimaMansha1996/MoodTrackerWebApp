@@ -1,0 +1,146 @@
+/* Body & breathing background */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to bottom right, #fceabb, #f8b500);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 50px 20px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: breathe 5s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+}
+
+/* Main container */
+.container {
+  background-color: #ffffffcc; /* slightly transparent white */
+  padding: 30px;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+/* Header */
+h1 {
+  color: #ff7f50;
+  margin-bottom: 20px;
+}
+
+/* Mood buttons */
+.mood-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.mood-buttons button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #ffe1b3;
+  transition: 0.3s;
+}
+
+.mood-buttons button:hover {
+  background-color: #ffd280;
+}
+
+/* Quote display */
+.quote {
+  font-style: italic;
+  color: #555;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+}
+
+/* Journal form */
+.form textarea {
+  width: 100%;
+  height: 80px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  resize: none;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.form button {
+  padding: 10px 20px;
+  background-color: #ff7f50;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+.form button:hover {
+  background-color: #ff5a1f;
+}
+
+/* Entries list */
+.entries {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.entry {
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+.entry p {
+  margin: 5px 0;
+}
+
+.entry small {
+  color: #555;
+  font-size: 12px;
+}
+
+/* Mood colors for entries */
+.entry.happy { background-color: #d4f7d4; }
+.entry.neutral { background-color: #fdf4c3; }
+.entry.sad { background-color: #f7d4d4; }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
