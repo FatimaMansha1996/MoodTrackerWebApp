@@ -1,25 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./index.css";
 
 function App() {
-  const [entry, setEntry] = useState("");           // Journal input
-  const [currentMood, setCurrentMood] = useState(""); // Selected mood
-  const [currentQuote, setCurrentQuote] = useState(""); // Quote text
-  const [currentAuthor, setCurrentAuthor] = useState(""); // Quote author
-  const [entries, setEntries] = useState([]);      // Saved entries
+  const [step, setStep] = useState(1);
+  const [currentMood, setCurrentMood] = useState("");
+  const [userAnswer, setUserAnswer] = useState("");
+  const [currentQuote, setCurrentQuote] = useState("");
+  const [currentAuthor, setCurrentAuthor] = useState("");
+  const [entries, setEntries] = useState([]);
 
-  // Load saved entries from localStorage
+  const [showBreathingChoice, setShowBreathingChoice] = useState(false);
+  const [breathing, setBreathing] = useState(false);
+  const [breathingText, setBreathingText] = useState("Inhale...");
+  const breathingInterval = useRef(null);
+
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("happyJournalEntries")) || [];
+    const saved = JSON.parse(localStorage.getItem("dailyMoodEntries")) || [];
     setEntries(saved);
   }, []);
 
-  // Save entries to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("happyJournalEntries", JSON.stringify(entries));
+    localStorage.setItem("dailyMoodEntries", JSON.stringify(entries));
   }, [entries]);
 
-  // Fetch a quote from QuoteSlate API
+  const moodQuestions = {
+    Happy: "What made you smile today?",
+    Neutral: "Anything interesting happen today?",
+    Sad: "What’s bothering you today?"
+  };
+
   const fetchQuote = async () => {
     try {
       const res = await fetch("https://quoteslate.vercel.app/api/quotes/random");
@@ -33,63 +42,121 @@ function App() {
     }
   };
 
-  // Called when user selects a mood
-  const selectMood = (mood) => {
+  const handleMoodSelect = (mood) => {
     setCurrentMood(mood);
-    setCurrentQuote("");
-    setCurrentAuthor("");
-    fetchQuote(); // fetch new quote for selected mood
+    setStep(2);
   };
 
-  // Save journal entry
-  const handleSubmit = (e) => {
+  const handleAnswerSubmit = (e) => {
     e.preventDefault();
-    if (!entry.trim()) return;
+    if (!userAnswer.trim()) return;
+    fetchQuote();
+    setStep(3);
+    setShowBreathingChoice(true); // Ask if user wants breathing
+  };
 
+  // Start breathing exercise
+  const startBreathing = () => {
+    setBreathing(true);
+    let inhale = true;
+    setBreathingText("Inhale...");
+    breathingInterval.current = setInterval(() => {
+      setBreathingText(inhale ? "Exhale..." : "Inhale...");
+      inhale = !inhale;
+    }, 4000); // 4s per inhale/exhale
+  };
+
+  // Stop breathing exercise
+  const stopBreathing = () => {
+    clearInterval(breathingInterval.current);
+    setBreathing(false);
+  };
+
+  const saveEntry = () => {
     const newEntry = {
       mood: currentMood,
-      text: entry,
+      text: userAnswer,
       quote: currentQuote,
       author: currentAuthor,
       date: new Date().toLocaleDateString()
     };
-
     setEntries([newEntry, ...entries]);
-    setEntry("");
+    // Reset
+    setStep(1);
+    setUserAnswer("");
+    setCurrentMood("");
     setCurrentQuote("");
     setCurrentAuthor("");
-    setCurrentMood("");
+    setBreathing(false);
+  };
+
+  const handleBreathingChoice = (choice) => {
+    if (choice === "yes") {
+      startBreathing();
+      setShowBreathingChoice(false);
+    } else {
+      setShowBreathingChoice(false);
+    }
   };
 
   return (
     <div className="container">
-     <h1>🌟 Daily Mood Tracker</h1>
+      <h1>🌟 Daily Mood Tracker</h1>
 
-      {/* Mood buttons */}
-      <div className="mood-buttons">
-        <button onClick={() => selectMood("Happy")}>😊 Happy</button>
-        <button onClick={() => selectMood("Neutral")}>😐 Neutral</button>
-        <button onClick={() => selectMood("Sad")}>☹️ Sad</button>
-      </div>
-
-      {/* Fetched Quote */}
-      {currentQuote && (
-        <div className="quote">
-          “{currentQuote}”
-          {currentAuthor && <span> — {currentAuthor}</span>}
+      {/* Step 1: Mood Selection */}
+      {step === 1 && (
+        <div className="mood-buttons">
+          <button onClick={() => handleMoodSelect("Happy")}>😊 Happy</button>
+          <button onClick={() => handleMoodSelect("Neutral")}>😐 Neutral</button>
+          <button onClick={() => handleMoodSelect("Sad")}>☹️ Sad</button>
         </div>
       )}
 
-      {/* Journal Entry Form */}
-      {currentMood && (
-        <form onSubmit={handleSubmit} className="form">
+      {/* Step 2: Mood Question */}
+      {step === 2 && (
+        <form onSubmit={handleAnswerSubmit} className="form">
+          <label>{moodQuestions[currentMood]}</label>
           <textarea
-            value={entry}
-            onChange={(e) => setEntry(e.target.value)}
-            placeholder="Write something about your day..."
+            value={userAnswer}
+            onChange={(e) => setUserAnswer(e.target.value)}
+            placeholder="Write your thoughts here..."
           />
-          <button type="submit">Save Entry</button>
+          <button type="submit">Next</button>
         </form>
+      )}
+
+      {/* Step 3: Quote + optional breathing */}
+      {step === 3 && (
+        <div className="quote-step">
+          {currentQuote && (
+            <div className="quote">
+              “{currentQuote}”
+              {currentAuthor && <span> — {currentAuthor}</span>}
+            </div>
+          )}
+
+          {/* Ask user if they want breathing */}
+          {showBreathingChoice && (
+            <div className="breathing-choice">
+              <p>Do you want to do a short breathing exercise to relax?</p>
+              <button onClick={() => handleBreathingChoice("yes")}>Yes</button>
+              <button onClick={() => handleBreathingChoice("no")}>No</button>
+            </div>
+          )}
+
+          {/* Breathing animation */}
+          {breathing && (
+            <div className="breathing-circle">
+              <p>{breathingText}</p>
+              <button onClick={stopBreathing}>Stop</button>
+            </div>
+          )}
+
+          {/* Save button */}
+          {!showBreathingChoice && !breathing && (
+            <button onClick={saveEntry}>Save Entry</button>
+          )}
+        </div>
       )}
 
       {/* Saved Entries */}
